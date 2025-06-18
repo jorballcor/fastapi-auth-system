@@ -1,11 +1,21 @@
-from db.common import get_db
-from db.schemas import User, TokenData
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from requests import get
+from common.db_access import get_db
+from db.exceptions import UserNotFoundException
+from db.querys import get_user
+from fastapi import Depends, Annotated, HTTPException
 from helper import verify_password
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
+from exceptions import CredentialsException, InactiveUserException
+from models.models import UserFeatures, TokenData
+from users.helper import oauth2_scheme
 import jwt
+import os
+
+
+ALGORITHM = os.getenv("ALGORITHM")
+SECRET_KEY = os.getenv("SECRET_KEY")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
 
 # Change function logic and imports
@@ -30,28 +40,25 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            raise CredentialsException(detail=["Could not validate credentials"])
         token_data = TokenData(username=username)
+        
     except InvalidTokenError:
-        raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+            raise CredentialsException(detail=["Could not validate credentials"])
+        
+    user = get_user(username=token_data.username, db=Depends(get_db()))
     if user is None:
-        raise credentials_exception
+        raise UserNotFoundException
     return user
 
 
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[UserFeatures, Depends(get_current_user)],
 ):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    if current_user.is_active is False:
+        raise InactiveUserException
     return current_user
