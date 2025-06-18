@@ -15,22 +15,22 @@ def get_user(username: str, db: Depends = get_db()):
                 is_active=db_user.is_active,
                 password=db_user.password,
             )
-            
+
         else:
             raise UserNotFoundException(username)
-        
+
     except DatabaseConnectionError as e:
         raise e.message
-    
+
 
 async def create_user_query(user: User, db: Depends = get_db()):
     """
     Create a new user in the database.
-    
+
     Args:
         user (User): The user data to be created.
         db (AsyncSession): The database session.
-    
+
     Returns:
         User: The created user object.
     """
