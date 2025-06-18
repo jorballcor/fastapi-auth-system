@@ -1,8 +1,7 @@
-from requests import get
 from common.db_access import get_db
 from db.exceptions import UserNotFoundException
 from db.querys import get_user
-from fastapi import Depends, Annotated, HTTPException
+from fastapi import Depends, Annotated
 from helper import verify_password
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
