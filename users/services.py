@@ -1,24 +1,25 @@
-from common.db_access import get_db
-from db.exceptions import UserNotFoundException
-from db.querys import get_user
-from fastapi import Depends, Annotated
+import os
+from datetime import datetime, timedelta, timezone
+
+import jwt
+from exceptions import CredentialsException, InactiveUserException
+from fastapi import Annotated, Depends
 from helper import verify_password
 from jwt.exceptions import InvalidTokenError
-from datetime import datetime, timedelta, timezone
-from exceptions import CredentialsException, InactiveUserException
-from models.models import UserFeatures, TokenData
-from users.helper import oauth2_scheme
-import jwt
-import os
 
+from common.db_access import get_db
+from common.logger_config import logger
+from db.exceptions import UserNotFoundException
+from db.querys import get_user
+from models.models import TokenData, UserFeatures
+from users.helper import oauth2_scheme
 
 ALGORITHM = os.getenv("ALGORITHM")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
 
-# Change function logic and imports
-def authenticate_user(username: str, password: str, db: Depends = get_db()):
+def authenticate_user(username: str, password: str, db: Depends(get_db())):
     user = get_user(username, db)
     if not user:
         return False
@@ -45,10 +46,10 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         if username is None:
             raise CredentialsException(detail=["Could not validate credentials"])
         token_data = TokenData(username=username)
-        
+
     except InvalidTokenError:
-            raise CredentialsException(detail=["Could not validate credentials"])
-        
+        logger.info("Invalid token.")
+
     user = get_user(username=token_data.username, db=Depends(get_db()))
     if user is None:
         raise UserNotFoundException
