@@ -7,8 +7,8 @@ class UserFeatures(BaseModel):
     password: str
     email: str
     is_active: bool
-    
-    
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -16,4 +16,3 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
-    
