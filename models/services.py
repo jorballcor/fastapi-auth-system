@@ -3,7 +3,7 @@ from db.common import get_db
 from db.schemas import User
 
 
-async def create_user_query(user: User, db: Depends(get_db)):
+async def create_user_query(user: User, db: Depends = get_db()):
     """
     Create a new user in the database.
     

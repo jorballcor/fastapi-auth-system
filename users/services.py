@@ -1,22 +1,22 @@
+from db.common import get_db
+from db.schemas import User, TokenData
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from helper import verify_password
+from jwt.exceptions import InvalidTokenError
+from datetime import datetime, timedelta, timezone
+import jwt
 
 
 # Change function logic and imports
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
+def authenticate_user(username: str, password: str, db: Depends = get_db()):
+    user = get_user(username, db)
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user.password):
         return False
     return user
 
-
-# Change logic to query the database
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
-    
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
