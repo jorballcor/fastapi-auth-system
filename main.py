@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from datetime import timedelta
 from typing import Annotated
 
-from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -18,9 +17,6 @@ from users.services import (
     create_access_token,
     get_current_active_user,
 )
-
-# Load environment variables from .env file
-load_dotenv()
 
 
 @asynccontextmanager
