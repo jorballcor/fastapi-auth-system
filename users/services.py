@@ -9,7 +9,7 @@ from jwt.exceptions import InvalidTokenError
 
 from common.db_access import get_db
 from common.logger_config import logger
-from db.exceptions import UserNotFoundException
+from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.querys import get_user
 from models.models import TokenData, UserFeatures
 from users.helper import oauth2_scheme
@@ -49,11 +49,17 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 
     except InvalidTokenError:
         logger.info("Invalid token.")
+        raise CredentialsException(detail=["Invalid token"])
 
-    user = get_user(username=token_data.username, db=Depends(get_db))
-    if user is None:
-        raise UserNotFoundException
-    return user
+    try:
+        user = get_user(username=token_data.username, db=Depends(get_db))
+        if user is None:
+            raise UserNotFoundException(username=token_data.username)
+        return user
+    
+    except DatabaseConnectionError as e:
+        logger.error(f"Database connection error during user lookup: {e}")
+        raise CredentialsException(detail=["Database connection error"])
 
 
 async def get_current_active_user(
