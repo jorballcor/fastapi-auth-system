@@ -4,7 +4,7 @@ from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.schemas import User
 
 
-def get_user(username: str, db: Depends = get_db()):
+async def get_user(username: str, db: Depends = get_db()):
     try:
         db_user = db.query(User).filter(User.username == username).first()
         if db_user:
@@ -34,7 +34,11 @@ async def create_user_query(user: User, db: Depends = get_db()):
     Returns:
         User: The created user object.
     """
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user
+    try:
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        return user
+    
+    except DatabaseConnectionError as e:
+        raise e.message
