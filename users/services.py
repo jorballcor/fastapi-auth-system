@@ -19,7 +19,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
 
-def authenticate_user(username: str, password: str, db: Depends(get_db())):
+def authenticate_user(username: str, password: str, db: Depends(get_db)):
     user = get_user(username, db)
     if not user:
         return False
@@ -50,7 +50,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     except InvalidTokenError:
         logger.info("Invalid token.")
 
-    user = get_user(username=token_data.username, db=Depends(get_db()))
+    user = get_user(username=token_data.username, db=Depends(get_db))
     if user is None:
         raise UserNotFoundException
     return user

@@ -4,7 +4,7 @@ from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.schemas import User
 
 
-async def get_user(username: str, db: Depends(get_db())):
+async def get_user(username: str, db: Depends(get_db)):
     try:
         db_user = db.query(User).filter(User.username == username).first()
         if db_user:
@@ -23,7 +23,7 @@ async def get_user(username: str, db: Depends(get_db())):
         raise e.message
 
 
-async def create_user_query(user: User, db: Depends(get_db())):
+async def create_user_query(user: User, db: Depends(get_db)):
     """
     Create a new user in the database.
 

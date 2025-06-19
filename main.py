@@ -38,7 +38,7 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/login", response_model=Token)
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Depends(get_db())
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Depends(get_db)
 ):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
@@ -59,5 +59,5 @@ async def read_users_me(
 
 
 @app.post("/users/")
-async def create_user(user: UserFeatures, db: Depends(get_db())):
+async def create_user(user: UserFeatures, db: Depends(get_db)):
     create_user_query(user, db)
