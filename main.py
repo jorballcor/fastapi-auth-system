@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 
-from common.db_access import get_db
+from db.access import get_db
 from db.engine import engine
 from db.querys import create_user_query
 from db.schemas import Base

@@ -6,7 +6,7 @@ from fastapi import Annotated, Depends
 from helper import verify_password
 from jwt.exceptions import InvalidTokenError
 
-from common.db_access import get_db
+from db.access import get_db
 from common.logger_config import logger
 from common.config import settings
 from db.exceptions import DatabaseConnectionError, UserNotFoundException

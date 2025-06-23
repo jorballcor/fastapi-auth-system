@@ -1,5 +1,5 @@
 from fastapi import Depends
-from common.db_access import get_db
+from db.access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.schemas import User, Users
 from models.models import UserFeatures
