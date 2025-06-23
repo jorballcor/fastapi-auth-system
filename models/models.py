@@ -1,4 +1,9 @@
 from pydantic import BaseModel
+from .validators import UserValidator
+
+
+class UserCreate(UserValidator):
+    pass
 
 
 class UserFeatures(BaseModel):

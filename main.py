@@ -9,8 +9,9 @@ from common.db_access import get_db
 from db.engine import engine
 from db.querys import create_user_query
 from db.schemas import Base
-from models.models import Token, UserFeatures
+from models.models import Token, UserCreate, UserFeatures
 from users.exceptions import CredentialsException
+from users.helper import get_password_hash
 from users.services import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
@@ -54,6 +55,15 @@ async def read_users_me(
     return current_user
 
 
-@app.post("/users/")
-async def create_user(user: UserFeatures, db: Depends(get_db)):
-    create_user_query(user, db)
+@app.post("/users/", response_model=UserFeatures)
+async def create_user(input_user: UserCreate, db: Depends(get_db)):
+    hashed_password = get_password_hash(input_user.password)
+    db_user = UserFeatures(
+        username=input_user.username,
+        email=input_user.email,
+        password=hashed_password,
+        is_active=input_user.is_active,
+    )
+
+    await create_user_query(db_user, db)
+    return db_user

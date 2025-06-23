@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -9,14 +8,15 @@ from jwt.exceptions import InvalidTokenError
 
 from common.db_access import get_db
 from common.logger_config import logger
+from common.config import settings
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.querys import get_user
 from models.models import TokenData, UserFeatures
 from users.helper import oauth2_scheme
 
-ALGORITHM = os.getenv("ALGORITHM")
-SECRET_KEY = os.getenv("SECRET_KEY")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+ALGORITHM = settings.ALGORITHM
+SECRET_KEY = settings.SECRET_KEY
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 def authenticate_user(username: str, password: str, db: Depends(get_db)):
@@ -56,7 +56,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         if user is None:
             raise UserNotFoundException(username=token_data.username)
         return user
-    
+
     except DatabaseConnectionError as e:
         logger.error(f"Database connection error during user lookup: {e}")
         raise CredentialsException(detail=["Database connection error"])

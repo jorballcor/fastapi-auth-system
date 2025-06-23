@@ -1,12 +1,13 @@
 from fastapi import Depends
 from common.db_access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
-from db.schemas import User
+from db.schemas import User, Users
+from models.models import UserFeatures
 
 
 async def get_user(username: str, db: Depends(get_db)):
     try:
-        db_user = db.query(User).filter(User.username == username).first()
+        db_user = db.query(Users).filter(User.username == username).first()
         if db_user:
             return User(
                 id=db_user.id,
@@ -23,7 +24,7 @@ async def get_user(username: str, db: Depends(get_db)):
         raise e.message
 
 
-async def create_user_query(user: User, db: Depends(get_db)):
+async def create_user_query(user: UserFeatures, db: Depends(get_db)):
     """
     Create a new user in the database.
 
@@ -39,6 +40,6 @@ async def create_user_query(user: User, db: Depends(get_db)):
         await db.commit()
         await db.refresh(user)
         return user
-    
+
     except DatabaseConnectionError as e:
         raise e.message
