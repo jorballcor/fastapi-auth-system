@@ -1,15 +1,15 @@
 from fastapi import Depends
 from db.access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
-from db.schemas import User, Users
+from db.schemas import Users
 from models.models import UserFeatures
 
 
 async def get_user(username: str, db: Depends(get_db)):
     try:
-        db_user = db.query(Users).filter(User.username == username).first()
+        db_user = db.query(Users).filter(Users.username == username).first()
         if db_user:
-            return User(
+            return UserFeatures(
                 id=db_user.id,
                 username=db_user.username,
                 email=db_user.email,
@@ -29,7 +29,7 @@ async def create_user_query(user: UserFeatures, db: Depends(get_db)):
     Create a new user in the database.
 
     Args:
-        user (User): The user data to be created.
+        user (UserFeatures): The user data to be created.
         db (AsyncSession): The database session.
 
     Returns:
