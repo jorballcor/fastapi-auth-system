@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from exceptions import CredentialsException, InactiveUserException
-from fastapi import Annotated, Depends
-from helper import verify_password
+from fastapi import Depends
+from typing import Annotated
 from jwt.exceptions import InvalidTokenError
 
 from db.access import get_db
@@ -12,7 +11,8 @@ from common.config import settings
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.querys import get_user
 from models.models import TokenData, UserFeatures
-from users.helper import oauth2_scheme
+from users.helper import oauth2_scheme, verify_password
+from users.exceptions import CredentialsException, InactiveUserException
 
 ALGORITHM = settings.ALGORITHM
 SECRET_KEY = settings.SECRET_KEY

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from typing import Annotated
+from sqlalchemy.orm import Session
 
 from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
@@ -35,7 +36,7 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/login", response_model=Token)
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Depends(get_db)
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)
 ):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
@@ -56,7 +57,7 @@ async def read_users_me(
 
 
 @app.post("/users/", response_model=UserFeatures)
-async def create_user(input_user: UserCreate, db: Depends(get_db)):
+async def create_user(input_user: UserCreate, db: Session = Depends(get_db)):
     hashed_password = get_password_hash(input_user.password)
     db_user = UserFeatures(
         username=input_user.username,

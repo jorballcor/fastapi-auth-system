@@ -1,5 +1,3 @@
-from ast import List
-
 from fastapi import HTTPException, status
 
 
@@ -12,7 +10,7 @@ class CredentialsException(HTTPException):
 
     def __init__(
         self,
-        detail: List[str] | str,
+        detail: list[str] | str,
     ):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
