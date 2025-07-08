@@ -1,4 +1,5 @@
 from fastapi import Depends
+from sqlalchemy import select
 from db.access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.schemas import Users
@@ -7,7 +8,10 @@ from models.models import UserFeatures
 
 async def get_user(username: str, db: Depends(get_db)):
     try:
-        db_user = db.query(Users).filter(Users.username == username).first()
+        stmt = select(Users).where(Users.username == username)
+        result = await db.execute(stmt)
+        db_user = result.scalar_one_or_none()
+
         if db_user:
             return UserFeatures(
                 id=db_user.id,

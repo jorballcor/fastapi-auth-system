@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 
 from db.access import get_db
-from db.engine import engine
+from db.engine import engine, AsyncSessionLocal
 from db.querys import create_user_query
 from db.schemas import Base
 from models.models import Token, UserCreate, UserFeatures
@@ -17,6 +17,7 @@ from users.services import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
     create_access_token,
+    create_initial_admin_user,
     get_current_active_user,
 )
 
@@ -26,6 +27,9 @@ async def lifespan(app: FastAPI):
     # Startup logic
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+        async with AsyncSessionLocal() as session:
+            await create_initial_admin_user(session)
     yield
     # Shutdown logic
     await engine.dispose()
@@ -38,7 +42,7 @@ app = FastAPI(lifespan=lifespan)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)
 ):
-    user = authenticate_user(form_data.username, form_data.password, db)
+    user = await authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise CredentialsException(detail=["Invalid username or password"])
 
