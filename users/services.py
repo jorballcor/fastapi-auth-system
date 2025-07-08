@@ -76,6 +76,7 @@ async def get_current_active_user(
         raise InactiveUserException
     return current_user
 
+
 from sqlalchemy import select
 from db.engine import AsyncSessionLocal
 from users.helper import get_password_hash

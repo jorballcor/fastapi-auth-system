@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     # Startup logic
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
+
         async with AsyncSessionLocal() as session:
             await create_initial_admin_user(session)
     yield
@@ -40,7 +40,8 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/login", response_model=Token)
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_db),
 ):
     user = await authenticate_user(form_data.username, form_data.password, db)
     if not user:
