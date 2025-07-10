@@ -4,9 +4,9 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
-class Users(Base):
+class UsersDB(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String(255), unique=True, index=True)
     password = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, index=True)

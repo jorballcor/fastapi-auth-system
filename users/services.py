@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from db.schemas import Users
+from db.schemas import UsersDB
 from fastapi import Depends
 from typing import Annotated
 from jwt.exceptions import InvalidTokenError
@@ -11,7 +11,7 @@ from common.logger_config import logger
 from common.config import settings
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.querys import get_user
-from models.models import TokenData, UserFeatures
+from models.models import TokenData, UserCreate, UserFeatures
 from users.helper import oauth2_scheme, verify_password
 from users.exceptions import CredentialsException, InactiveUserException
 
@@ -59,14 +59,14 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         raise CredentialsException(detail=["Invalid token"])
 
     try:
-        user = get_user(username=token_data.username, db=Depends(get_db))
+        user = await get_user(username=token_data.username, db=Depends(get_db))
         if user is None:
             raise UserNotFoundException(username=token_data.username)
         return user
 
     except DatabaseConnectionError as e:
         logger.error(f"Database connection error during user lookup: {e}")
-        raise CredentialsException(detail=["Database connection error"])
+        raise DatabaseConnectionError(detail=["Database connection error"])
 
 
 async def get_current_active_user(
@@ -86,13 +86,13 @@ from common.logger_config import logger
 
 async def create_initial_admin_user(db: AsyncSessionLocal()):
     try:
-        result = await db.execute(select(Users).limit(1))
+        result = await db.execute(select(UsersDB).limit(1))
         first_user = result.scalar_one_or_none()
         if first_user:
             logger.info("Un utilisateur existe déjà, aucun admin initial créé.")
             return
 
-        first_user = Users(
+        first_user = UsersDB(
             username=SUPERUSER_USERNAME,
             email=SUPERUSER_EMAIL,
             password=get_password_hash(SUPERUSER_PASSWORD),
@@ -103,3 +103,20 @@ async def create_initial_admin_user(db: AsyncSessionLocal()):
         logger.info("✅ Utilisateur admin initial créé")
     except Exception as e:
         logger.error(f"❌ Échec de la création de l'utilisateur admin initial : {e}")
+
+
+def validate_user(user: UserFeatures) -> UserCreate:
+    try:
+        validated_user = UserCreate(
+            username=user.username,
+            email=user.email,
+            password=user.password,
+        )   
+                
+    except Exception as e:
+        logger.error(f"Validation error: {e}")
+        raise CredentialsException(detail=["Invalid user data"])
+    
+    validate_user.password = get_password_hash(validated_user.password)
+    
+    return validated_user

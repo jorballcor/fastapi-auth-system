@@ -8,8 +8,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from db.access import get_db
 from db.engine import engine, AsyncSessionLocal
-from db.querys import create_user_query
-from db.schemas import Base
+from db.querys import check_existing_user, create_user_query
+from db.schemas import Base, UsersDB
 from models.models import Token, UserCreate, UserFeatures
 from users.exceptions import CredentialsException
 from users.helper import get_password_hash
@@ -19,6 +19,7 @@ from users.services import (
     create_access_token,
     create_initial_admin_user,
     get_current_active_user,
+    validate_user,
 )
 
 
@@ -61,15 +62,15 @@ async def read_users_me(
     return current_user
 
 
-@app.post("/users/", response_model=UserFeatures)
-async def create_user(input_user: UserCreate, db: Session = Depends(get_db)):
-    hashed_password = get_password_hash(input_user.password)
-    db_user = UserFeatures(
-        username=input_user.username,
-        email=input_user.email,
-        password=hashed_password,
-        is_active=input_user.is_active,
-    )
-
-    await create_user_query(db_user, db)
-    return db_user
+@app.post("/users/", response_model=UserCreate)
+async def create_user(input_user: UserFeatures, db: Session = Depends(get_db)):
+    if await check_existing_user(db, input_user.username, input_user.email):
+        raise CredentialsException(detail=["Username or email already exists"])
+    
+    
+    validated_user = validate_user(input_user)
+    
+    db_user = UsersDB(**validated_user.model_dump())
+    created_user = await create_user_query(db_user, db)
+    
+    return created_user

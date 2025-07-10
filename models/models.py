@@ -7,11 +7,9 @@ class UserCreate(UserValidator):
 
 
 class UserFeatures(BaseModel):
-    id: int
     username: str
     password: str
     email: str
-    is_active: bool
 
 
 class Token(BaseModel):

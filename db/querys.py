@@ -2,13 +2,13 @@ from fastapi import Depends
 from sqlalchemy import select
 from db.access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
-from db.schemas import Users
-from models.models import UserFeatures
+from db.schemas import UsersDB
+from models.models import UserCreate, UserFeatures
 
 
 async def get_user(username: str, db: Depends(get_db)):
     try:
-        stmt = select(Users).where(Users.username == username)
+        stmt = select(UsersDB).where(UsersDB.username == username)
         result = await db.execute(stmt)
         db_user = result.scalar_one_or_none()
 
@@ -28,7 +28,7 @@ async def get_user(username: str, db: Depends(get_db)):
         raise e.message
 
 
-async def create_user_query(user: UserFeatures, db: Depends(get_db)):
+async def create_user_query(user: UserCreate, db: Depends(get_db)):
     """
     Create a new user in the database.
 
@@ -47,3 +47,12 @@ async def create_user_query(user: UserFeatures, db: Depends(get_db)):
 
     except DatabaseConnectionError as e:
         raise e.message
+
+async def check_existing_user(db: Depends(get_db), username: str, email: str) -> bool:
+    existing_user = await db.execute(
+        select(UsersDB).where(
+            (UsersDB.username == username) | 
+            (UsersDB.email == email)
+        )
+    )
+    return existing_user.scalars().first() is not None
