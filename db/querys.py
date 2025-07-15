@@ -13,7 +13,7 @@ async def get_user(username: str, db: Depends(get_db)):
         db_user = result.scalar_one_or_none()
 
         if db_user:
-            return UserFeatures(
+            return UserCreate(
                 id=db_user.id,
                 username=db_user.username,
                 email=db_user.email,

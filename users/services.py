@@ -59,7 +59,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         raise CredentialsException(detail=["Invalid token"])
 
     try:
-        user = await get_user(username=token_data.username, db=Depends(get_db))
+        user = await get_user(username=token_data.username, db=AsyncSessionLocal())
         if user is None:
             raise UserNotFoundException(username=token_data.username)
         return user
@@ -70,7 +70,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 
 
 async def get_current_active_user(
-    current_user: Annotated[UserFeatures, Depends(get_current_user)],
+    current_user: Annotated[UserCreate, Depends(get_current_user)],
 ):
     if current_user.is_active is False:
         raise InactiveUserException

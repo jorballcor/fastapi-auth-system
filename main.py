@@ -38,6 +38,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 
 @app.post("/login", response_model=Token)
 async def login_for_access_token(
@@ -55,9 +59,9 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@app.get("/users/me/", response_model=UserFeatures)
+@app.get("/users/me/", response_model=UserCreate)
 async def read_users_me(
-    current_user: Annotated[UserFeatures, Depends(get_current_active_user)],
+    current_user: Annotated[UserCreate, Depends(get_current_active_user)],
 ):
     return current_user
 
