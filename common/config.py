@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
     
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    TEST_DATABASE_URL: str = Field(..., env="TEST_DATABASE_URL")
 
     SECRET_KEY: str = Field(..., min_length=32, env="SECRET_KEY")
     ALGORITHM: str = Field(..., env="ALGORITHM")
