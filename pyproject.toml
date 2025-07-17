@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiomysql>=0.2.0",
+    "aiosqlite>=0.21.0",
     "bcrypt==4.0.1",
     "dotenv>=0.9.9",
     "fastapi[standard]>=0.115.12",
@@ -13,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "pyjwt>=2.10.1",
     "pytest>=8.4.1",
+    "pytest-env>=1.1.5",
     "python-jose>=3.5.0",
     "ruff>=0.12.0",
     "sqlalchemy>=2.0.41",
