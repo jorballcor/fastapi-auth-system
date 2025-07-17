@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, root_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
     
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
-    TEST_DATABASE_URL: str = Field(..., env="TEST_DATABASE_URL")
+    TEST_DATABASE_URL: str = Field(..., json_schema_extra={"env": "TEST_DATABASE_URL"})
 
     SECRET_KEY: str = Field(..., min_length=32, env="SECRET_KEY")
     ALGORITHM: str = Field(..., env="ALGORITHM")
@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env.test" if os.getenv("TESTING") == "1" else ".env",
     )
+
+
+    @root_validator(pre=True)
+    def assign_database_url(cls, values):
+        if values.get("TESTING") and values.get("TEST_DATABASE_URL"):
+            values["DATABASE_URL"] = values["TEST_DATABASE_URL"]
+        return values
 
 
 settings = Settings()
