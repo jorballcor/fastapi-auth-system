@@ -1,34 +1,37 @@
-from pydantic import Field, root_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
-
+from functools import lru_cache
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import model_validator
 
 class Settings(BaseSettings):
     TESTING: bool = False
-    
-    DATABASE_URL: str = Field(..., env="DATABASE_URL")
-    TEST_DATABASE_URL: str = Field(..., json_schema_extra={"env": "TEST_DATABASE_URL"})
 
-    SECRET_KEY: str = Field(..., min_length=32, env="SECRET_KEY")
-    ALGORITHM: str = Field(..., env="ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
-        default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES"
-    )
+    DATABASE_URL: str = Field(...)
+    TEST_DATABASE_URL: str = Field(...)
 
-    FIRST_SUPERUSER_USERNAME: str = Field(..., env="FIRST_SUPERUSER_USERNAME")
-    FIRST_SUPERUSER_EMAIL: str = Field(..., env="FIRST_SUPERUSER_EMAIL")
-    FIRST_SUPERUSER_PASSWORD: str = Field(..., env="FIRST_SUPERUSER_PASSWORD")
+    SECRET_KEY: str = Field(..., min_length=32)
+    ALGORITHM: str = Field(...)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(30)
+
+    FIRST_SUPERUSER_USERNAME: str = Field(...)
+    FIRST_SUPERUSER_EMAIL: str = Field(...)
+    FIRST_SUPERUSER_PASSWORD: str = Field(...)
 
     model_config = SettingsConfigDict(
         env_file=".env.test" if os.getenv("TESTING") == "1" else ".env",
     )
 
-
-    @root_validator(pre=True)
-    def assign_database_url(cls, values):
+    @model_validator(mode="before")
+    def _assign_db_url(cls, values: dict) -> dict:
+        # replicates your v1 root_validator logic
         if values.get("TESTING") and values.get("TEST_DATABASE_URL"):
             values["DATABASE_URL"] = values["TEST_DATABASE_URL"]
         return values
 
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
 
-settings = Settings()
+
+settings = get_settings()

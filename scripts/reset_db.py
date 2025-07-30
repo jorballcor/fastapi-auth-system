@@ -11,13 +11,13 @@ from db.schemas import Base
 
 
 async def reset_db():
-    print("🚨 Dropping and recreating all tables...")
+    print(" Dropping and recreating all tables...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
         await engine.dispose()
 
-    print("✅ Database reset complete.")
+    print(" Database reset complete.")
 
 
 if __name__ == "__main__":
