@@ -73,7 +73,6 @@ async def seed_admin():
         )
         session.add(user)
         await session.commit()
-        print(f"✅ Superadmin '{FIRST_SUPERUSER_USERNAME}' seeded.")
         
 
 async def init_db():
