@@ -31,3 +31,11 @@ class InactiveUserException(HTTPException):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=detail,
         )
+
+
+class UserAlreadyExistsException(Exception):
+    """Exception raised when a user already exists in the database."""
+
+    def __init__(self, username: str):
+        self.username = username
+        super().__init__(f"User '{username}' already exists in the database.")
