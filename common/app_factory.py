@@ -3,7 +3,9 @@ from contextlib import asynccontextmanager
 from db.engine import engine, AsyncSessionLocal
 from db.schemas import Base
 from users.services import create_initial_admin_user
-from routes import router
+from routes.health import health_router
+from routes.login import login_router
+from routes.users import users_router
 
 
 @asynccontextmanager
@@ -22,9 +24,13 @@ async def lifespan(app: FastAPI):
 def create_app(testing: bool = False) -> FastAPI:
     if testing:
         app = FastAPI()
-        app.include_router(router)
+        app.include_router(health_router)
+        app.include_router(login_router)
+        app.include_router(users_router)
         return app
     
     app = FastAPI(lifespan=lifespan)
-    app.include_router(router)
+    app.include_router(health_router)
+    app.include_router(login_router)
+    app.include_router(users_router)
     return app
