@@ -22,6 +22,10 @@ def test_users_me_protected_and_success(client: TestClient):
     })
     assert response.status_code == 200
     assert "username" in response.json()
+    
+     # 4. Appel protégé avec token → 401 Unauthorized
+    response = client.get("/users/me")
+    assert response.status_code == 401
 
 
 def test_create_user(client: TestClient):
