@@ -4,7 +4,7 @@ from db.access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.schemas import Todo, UsersDB
 from models.models import TodoCreate, TodoResponse, UserCreate, UserFeatures
-from todos.exceptions import UserTodoNotFoundException
+from todos.exceptions import DeleteTodoException, UpdateTodoException, UserTodoNotFoundException
 from users.services import get_current_user
 
 
@@ -115,20 +115,28 @@ async def create_todo_query(input_todo: TodoCreate, db: Depends(get_db)):
     except DatabaseConnectionError as e:
         raise e.message
     
-    
+
+async def fetch_user_todo(
+    todo_id: int, 
+    db: Depends(get_db), 
+    current_user = Depends(get_current_user)
+) -> TodoResponse:
+    todos = await db.execute(
+            select(Todo).where(
+                Todo.id == todo_id, 
+                Todo.owner_id == current_user.id
+        ))
+    todo = todos.scalars().first()
+    return todo
+
+
 async def get_user_todo(
     todo_id: int, 
     db: Depends(get_db), 
     current_user = Depends(get_current_user)
 ):
     try:
-        todos = await db.execute(
-            select(Todo).where(
-                Todo.id == todo_id, 
-                Todo.owner_id == current_user.id
-        ))
-        todo = todos.scalars().first()
-        
+        todo = fetch_user_todo(todo_id, db, current_user)
         if not todo:
             raise UserTodoNotFoundException(todo_id)
         
@@ -140,29 +148,19 @@ async def get_user_todo(
     
 async def update_user_todo(
     todo_id: int,
-    todo_updates: TodoCreate,  # Or TodoUpdate if different from TodoCreate
+    todo_updates: TodoCreate, 
     db: Depends(get_db),
     current_user = Depends(get_current_user)
 ) -> TodoResponse:
     try:
-        # 1. Fetch the existing todo (ensure it belongs to the user)
-        result = await db.execute(
-            select(Todo).where(
-                Todo.id == todo_id,
-                Todo.owner_id == current_user.id
-            )
-        )
-        existing_todo = result.scalars().first()
-        
+        existing_todo = fetch_user_todo(todo_id, db, current_user)
         if not existing_todo:
             raise UserTodoNotFoundException(todo_id)
         
-        # 2. Apply updates (only modify provided fields)
         update_data = todo_updates.model_dump(exclude_unset=True)  # Ignore None/empty fields
         for field, value in update_data.items():
             setattr(existing_todo, field, value)
         
-        # 3. Commit changes
         await db.commit()
         await db.refresh(existing_todo)  # Get updated values
         
@@ -170,16 +168,12 @@ async def update_user_todo(
     
     except DatabaseConnectionError as e:
         await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database connection error"
-        )
+        raise e.message
+    
     except Exception as e:
         await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update todo"
-        )
+        raise UpdateTodoException(todo_id=todo_id)
+        
         
 async def delete_user_todo(
     todo_id: int,
@@ -187,19 +181,10 @@ async def delete_user_todo(
     current_user = Depends(get_current_user)
 ) -> dict:
     try:
-        # Fetch the todo (check ownership)
-        result = await db.execute(
-            select(Todo).where(
-                Todo.id == todo_id,
-                Todo.owner_id == current_user.id
-            )
-        )
-        todo = result.scalars().first()
-        
+        todo = fetch_user_todo(todo_id, db, current_user)
         if not todo:
             raise UserTodoNotFoundException(todo_id)
         
-        # Delete the todo
         await db.delete(todo)
         await db.commit()
         
@@ -207,13 +192,8 @@ async def delete_user_todo(
     
     except DatabaseConnectionError as e:
         await db.rollback()
-        raise HTTPException(
-            status_code=503,
-            detail="Database connection error"
-        )
+        raise e.message
+    
     except Exception as e:
         await db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete todo: {str(e)}"
-        )
+        raise DeleteTodoException(todo_id=todo_id)
