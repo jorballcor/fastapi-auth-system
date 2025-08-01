@@ -1,20 +1,16 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from db.schemas import UsersDB
+from db.base_users_querys import get_user
 from fastapi import Depends
 from typing import Annotated
-from jwt.exceptions import InvalidTokenError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 from db.access import get_db
 from common.logger_config import logger
-from common.config import get_settings
-from db.exceptions import DatabaseConnectionError, UserNotFoundException
-from db.querys import get_user
-from models.models import TokenData, UserCreate, UserFeatures
-from users.helper import oauth2_scheme, verify_password
+from models.models import UserCreate, UserFeatures
+from users.dependencies import get_current_user
+from users.helper import get_password_hash, verify_password
 from users.exceptions import CredentialsException, InactiveUserException
 from common.config import settings
 
@@ -49,63 +45,12 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(get_db)],):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("sub")
-        if username is None:
-            raise CredentialsException(detail=["Could not validate credentials"])
-        token_data = TokenData(username=username)
-
-    except InvalidTokenError:
-        logger.info("Invalid token.")
-        raise CredentialsException(detail=["Invalid token"])
-
-    try:
-        user = await get_user(username=token_data.username, db=db)
-        if user is None:
-            raise UserNotFoundException(username=token_data.username)
-        return user
-
-    except DatabaseConnectionError as e:
-        logger.error(f"Database connection error during user lookup: {e}")
-        raise DatabaseConnectionError(detail=["Database connection error"])
-
-
 async def get_current_active_user(
     current_user: Annotated[UserCreate, Depends(get_current_user)],
 ):
     if current_user.is_active is False:
         raise InactiveUserException
     return current_user
-
-
-from sqlalchemy import select
-from db.engine import AsyncSessionLocal
-from users.helper import get_password_hash
-from models.models import UserFeatures
-from common.logger_config import logger
-
-
-async def create_initial_admin_user(db: AsyncSessionLocal()):
-    try:
-        result = await db.execute(select(UsersDB).limit(1))
-        first_user = result.scalar_one_or_none()
-        if first_user:
-            logger.info("Un utilisateur existe déjà, aucun admin initial créé.")
-            return
-
-        first_user = UsersDB(
-            username=SUPERUSER_USERNAME,
-            email=SUPERUSER_EMAIL,
-            password=get_password_hash(SUPERUSER_PASSWORD),
-            is_active=True,
-        )
-        db.add(first_user)
-        await db.commit()
-        logger.info("✅ Utilisateur admin initial créé")
-    except Exception as e:
-        logger.error(f"❌ Échec de la création de l'utilisateur admin initial : {e}")
 
 
 def validate_user(user: UserFeatures) -> UserCreate:

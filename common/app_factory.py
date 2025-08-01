@@ -1,8 +1,8 @@
+from db.querys import create_initial_admin_user
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db.engine import engine, AsyncSessionLocal
 from db.schemas import Base
-from users.services import create_initial_admin_user
 from routes.health import health_router
 from routes.login import login_router
 from routes.users import users_router

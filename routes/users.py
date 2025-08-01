@@ -29,7 +29,6 @@ async def create_user(input_user: UserFeatures, db: Session = Depends(get_db)):
     if await check_existing_user(db, input_user.username, input_user.email):
         raise CredentialsException(detail=["Username or email already exists"])
     
-    
     validated_user = validate_user(input_user)
     
     db_user = UsersDB(**validated_user.model_dump())
