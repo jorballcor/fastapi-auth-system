@@ -1,5 +1,8 @@
+from passlib.context import CryptContext
+from fastapi.security import OAuth2PasswordBearer
 import os
 from functools import lru_cache
+from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import model_validator
@@ -8,7 +11,7 @@ class Settings(BaseSettings):
     TESTING: bool = False
 
     DATABASE_URL: str = Field(...)
-    TEST_DATABASE_URL: str = Field(...)
+    TEST_DATABASE_URL: Optional[str] = Field(default=None)
 
     SECRET_KEY: str = Field(..., min_length=32)
     ALGORITHM: str = Field(...)
@@ -35,3 +38,9 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
