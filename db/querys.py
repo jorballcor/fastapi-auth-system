@@ -3,31 +3,10 @@ from sqlalchemy import select
 from db.access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.schemas import Todo, UsersDB
-from models.models import TodoCreate, TodoResponse, UserCreate, UserFeatures
+from models.models import TodoCreate, TodoResponse, UserCreate
 from todos.exceptions import DeleteTodoException, UpdateTodoException, UserTodoNotFoundException
-from users.services import get_current_user
+from users.dependencies import get_current_user
 
-
-async def get_user(username: str, db: Depends(get_db)):
-    try:
-        stmt = select(UsersDB).where(UsersDB.username == username)
-        result = await db.execute(stmt)
-        db_user = result.scalar_one_or_none()
-
-        if db_user:
-            return UserCreate(
-                id=db_user.id,
-                username=db_user.username,
-                email=db_user.email,
-                is_active=db_user.is_active,
-                password=db_user.password,
-            )
-
-        else:
-            raise UserNotFoundException(username)
-
-    except DatabaseConnectionError as e:
-        raise e.message
 
 
 async def create_user_query(user: UserCreate, db: Depends(get_db)):
@@ -60,6 +39,34 @@ async def check_existing_user(db: Depends(get_db), username: str, email: str) ->
     return existing_user.scalars().first() is not None
 
 
+from sqlalchemy import select
+from db.engine import AsyncSessionLocal
+from users.helper import get_password_hash
+from common.logger_config import logger
+from users.services import SUPERUSER_EMAIL, SUPERUSER_PASSWORD, SUPERUSER_USERNAME
+
+
+async def create_initial_admin_user(db: AsyncSessionLocal()):
+    try:
+        result = await db.execute(select(UsersDB).limit(1))
+        first_user = result.scalar_one_or_none()
+        if first_user:
+            logger.info("Un utilisateur existe déjà, aucun admin initial créé.")
+            return
+
+        first_user = UsersDB(
+            username=SUPERUSER_USERNAME,
+            email=SUPERUSER_EMAIL,
+            password=get_password_hash(SUPERUSER_PASSWORD),
+            is_active=True,
+        )
+        db.add(first_user)
+        await db.commit()
+        logger.info("Utilisateur admin initial créé")
+    except Exception as e:
+        logger.error(f"Échec de la création de l'utilisateur admin initial : {e}")
+
+
 async def get_all_todos(db: Depends(get_db), current_user = Depends(get_current_user)):
     """
     Retrieve all todos for the current user.
@@ -81,7 +88,7 @@ async def get_all_todos(db: Depends(get_db), current_user = Depends(get_current_
         raise e.message
     
     
-async def check_existing_todo(db: Session, title: str) -> bool:
+async def check_existing_todo(db: Depends(get_db), title: str) -> bool:
     try:
         existing_todo = await db.execute(
             select(Todo).where(
