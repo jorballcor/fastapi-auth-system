@@ -23,6 +23,7 @@ class PasswordValidator(BaseModel):
 
 
 class UserValidator(BaseModel):
+    id: Optional[int] = None
     username: str
     email: EmailStr
     password: str

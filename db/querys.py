@@ -1,7 +1,9 @@
 from fastapi import Depends
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.access import get_db
-from db.exceptions import DatabaseConnectionError, UserNotFoundException
+from db.exceptions import DatabaseConnectionError
 from db.schemas import Todo, UsersDB
 from models.models import TodoCreate, TodoResponse, UserCreate
 from todos.exceptions import DeleteTodoException, UpdateTodoException, UserTodoNotFoundException
@@ -101,25 +103,24 @@ async def check_existing_todo(db: Depends(get_db), title: str) -> bool:
         raise e.message
 
 
-async def create_todo_query(input_todo: TodoCreate, db: Depends(get_db)):
-    """
-    Create a new todo in the database.
-
-    Args:
-        input_todo (TodoCreate): The todo data to be created.
-        db (AsyncSession): The database session.
-
-    Returns:
-        TodoResponse: The created todo object.
-    """
+async def create_todo_query(
+    input_todo: TodoCreate, 
+    db: AsyncSession,
+    current_user: UsersDB
+):
     try:
-        todo = Todo(**input_todo.model_dump())
+        todo = Todo(
+            title=input_todo.title,
+            description=input_todo.description,
+            done=input_todo.done,
+            owner_id=current_user.id  
+        )
         db.add(todo)
         await db.commit()
         await db.refresh(todo)
-        return TodoResponse(**todo)
-
+        return TodoResponse.from_orm(todo)
     except DatabaseConnectionError as e:
+        await db.rollback()
         raise e.message
     
 

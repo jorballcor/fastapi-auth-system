@@ -30,7 +30,7 @@ async def create_todo(
     if await check_existing_todo(db, input_todo.title):
         raise TodoAlreadyExistsException(title=input_todo.title)    
     
-    return await create_todo_query(input_todo, db)  
+    return await create_todo_query(input_todo, db, current_user)  
     
     
 @todo_router.get("/todos/{todo_id}", response_model=TodoResponse)
@@ -40,7 +40,6 @@ async def get_todo(
     current_user:  Annotated[UserCreate, Depends(get_current_user)]
 ):
     return await get_user_todo(todo_id, db, current_user)
-
 
 
 @todo_router.put("/todos/{todo_id}", response_model=TodoResponse)
