@@ -65,6 +65,6 @@ def validate_user(user: UserFeatures) -> UserCreate:
         logger.error(f"Validation error: {e}")
         raise CredentialsException(detail=["Invalid user data"])
     
-    validate_user.password = get_password_hash(validated_user.password)
+    validated_user.password = get_password_hash(validated_user.password)
     
     return validated_user
