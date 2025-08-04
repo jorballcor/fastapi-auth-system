@@ -10,10 +10,10 @@ from todos.exceptions import TodoAlreadyExistsException, UserTodoNotFoundExcepti
 from users.services import get_current_user
 
 
-todo_router = APIRouter(prefix="/todo")
+todo_router = APIRouter()
 
 
-@todo_router.get()
+@todo_router.get("/todos")
 async def get_todos(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user:  Annotated[UserCreate, Depends(get_current_user)]
@@ -21,19 +21,19 @@ async def get_todos(
     return await get_all_todos(db, current_user)
 
 
-@todo_router.post(response_model=TodoResponse)
+@todo_router.post("/todos", response_model=TodoResponse)
 async def create_todo(
     input_todo: TodoCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user:  Annotated[UserCreate, Depends(get_current_user)]
 ):
-    if await check_existing_todo(db, input_todo.title, input_todo.description):
+    if await check_existing_todo(db, input_todo.title):
         raise TodoAlreadyExistsException(title=input_todo.title)    
     
     return await create_todo_query(input_todo, db)  
     
     
-@todo_router.get("/{todo_id}", response_model=TodoResponse)
+@todo_router.get("/todos/{todo_id}", response_model=TodoResponse)
 async def get_todo(
     todo_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -43,7 +43,7 @@ async def get_todo(
 
 
 
-@todo_router.put("/{todo_id}", response_model=TodoResponse)
+@todo_router.put("/todos/{todo_id}", response_model=TodoResponse)
 async def update_todo(
     todo_id: int,
     todo_updates: TodoUpdate,
@@ -58,7 +58,7 @@ async def update_todo(
     )
     
 
-@todo_router.delete("/{todo_id}")
+@todo_router.delete("/todos/{todo_id}")
 async def delete_todo(
     todo_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],

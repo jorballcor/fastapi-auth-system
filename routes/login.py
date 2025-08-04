@@ -15,7 +15,7 @@ from users.services import (
 from users.exceptions import CredentialsException
 
 
-login_router = APIRouter(prefix="/login")
+login_router = APIRouter()
 
 
 @login_router.post("/login", response_model=Token)
