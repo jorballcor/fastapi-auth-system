@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import declarative_base 
 
 Base = declarative_base()
@@ -19,4 +19,4 @@ class Todo(Base):
     title = Column(String(255), nullable=False)
     description = Column(String(500), nullable=True)
     done = Column(Boolean, default=False)
-    owner_id = Column(Integer, nullable=False)  # Foreign key to UsersDB
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)  
