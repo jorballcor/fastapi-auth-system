@@ -184,11 +184,11 @@ async def update_user_todo(
         
 async def delete_user_todo(
     todo_id: int,
-    db: Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: AsyncSession,
+    current_user: UsersDB
 ) -> dict:
     try:
-        todo = fetch_user_todo(todo_id, db, current_user)
+        todo = await fetch_user_todo(todo_id, db, current_user)
         if not todo:
             raise UserTodoNotFoundException(todo_id)
         
