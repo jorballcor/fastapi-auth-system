@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.access import get_db
 from db.exceptions import DatabaseConnectionError
 from db.schemas import Todo, UsersDB
-from models.models import TodoCreate, TodoResponse, UserCreate
+from models.models import TodoCreate, TodoResponse, TodoUpdate, UserCreate
 from todos.exceptions import DeleteTodoException, UpdateTodoException, UserTodoNotFoundException
 from users.dependencies import get_current_user
 
@@ -123,11 +123,10 @@ async def create_todo_query(
         await db.rollback()
         raise e.message
     
-
 async def fetch_user_todo(
     todo_id: int, 
-    db: Depends(get_db), 
-    current_user = Depends(get_current_user)
+    db: AsyncSession, 
+    current_user: UsersDB
 ) -> TodoResponse:
     todos = await db.execute(
             select(Todo).where(
@@ -156,23 +155,23 @@ async def get_user_todo(
     
 async def update_user_todo(
     todo_id: int,
-    todo_updates: TodoCreate, 
-    db: Depends(get_db),
-    current_user = Depends(get_current_user)
+    todo_updates: TodoUpdate, 
+    db: AsyncSession,
+    current_user: UsersDB
 ) -> TodoResponse:
     try:
-        existing_todo = fetch_user_todo(todo_id, db, current_user)
+        existing_todo = await fetch_user_todo(todo_id, db, current_user)
         if not existing_todo:
             raise UserTodoNotFoundException(todo_id)
         
-        update_data = todo_updates.model_dump(exclude_unset=True)  # Ignore None/empty fields
+        update_data = todo_updates.model_dump(exclude_unset=True)  
         for field, value in update_data.items():
             setattr(existing_todo, field, value)
         
         await db.commit()
-        await db.refresh(existing_todo)  # Get updated values
+        await db.refresh(existing_todo)  
         
-        return TodoResponse(**existing_todo.model_dump())
+        return TodoResponse.model_validate(existing_todo)
     
     except DatabaseConnectionError as e:
         await db.rollback()
