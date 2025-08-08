@@ -1,5 +1,7 @@
 from fastapi import Depends
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from db.access import get_db
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 from db.schemas import  UsersDB
@@ -7,7 +9,7 @@ from models.models import UserCreate
 from db.exceptions import DatabaseConnectionError, UserNotFoundException
 
 
-async def get_user(username: str, db: Depends(get_db)):
+async def get_user(username: str, db: AsyncSession):
     try:
         stmt = select(UsersDB).where(UsersDB.username == username)
         result = await db.execute(stmt)

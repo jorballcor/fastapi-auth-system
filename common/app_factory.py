@@ -1,4 +1,4 @@
-from db.querys import create_initial_admin_user
+from db.user_querys import create_initial_admin_user
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db.engine import engine, AsyncSessionLocal
