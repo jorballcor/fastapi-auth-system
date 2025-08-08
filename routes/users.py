@@ -4,7 +4,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 
 from db.access import get_db
-from db.querys import check_existing_user, create_user_query
+from db.user_querys import check_existing_user, create_user_query
 from db.schemas import  UsersDB
 from models.models import  UserCreate, UserFeatures
 from users.exceptions import CredentialsException

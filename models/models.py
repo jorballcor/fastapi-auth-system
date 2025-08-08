@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from .validators import UserValidator
 
 
@@ -28,13 +28,13 @@ class TodoCreate(BaseModel):
     
     
 class TodoResponse(BaseModel):
+    id: int | None = None
     title: str
     description: str | None = None
     done: bool
     owner_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
         
     
 class TodoUpdate(BaseModel):        

@@ -1,6 +1,5 @@
 from fastapi.testclient import TestClient
-from tests.testing_db import client
-from tests.testing_db import FIRST_SUPERUSER_USERNAME, FIRST_SUPERUSER_PASSWORD   
+from tests.conftest import FIRST_SUPERUSER_PASSWORD, FIRST_SUPERUSER_USERNAME, client
 
 
 def test_users_me_protected_and_success(client: TestClient):
